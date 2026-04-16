@@ -14,7 +14,7 @@ EXECUTE msdb.dbo.sysmail_add_profile_sp
 EXECUTE msdb.dbo.sysmail_add_account_sp
     @account_name = 'AdminAccount',
     @description = 'Account for sending alerts',
-    @email_address = 'sqladmin@example.com',
+    @email_address = 'kseniyakhadzhynava@gmail.com',
     @display_name = 'SQL Server Automation',
     @mailserver_name = 'localhost'; -- In production, use your SMTP server
 
