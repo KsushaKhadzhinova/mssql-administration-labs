@@ -85,3 +85,9 @@ docker inspect --format='{{range $p, $conf := .NetworkSettings.Ports}}{{$p}} -> 
 
 **Expected Result:**  
 Displays mapping information similar to:
+1433/tcp -> 14332
+
+
+---
+
+**End of Lab 1.1**
