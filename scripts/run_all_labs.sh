@@ -1,0 +1,11 @@
+#!/bin/bash
+S1='localhost,14331'
+S2='localhost,14332'
+S3='localhost,14333'
+P='YourStrongPassword123!'
+CMD='/opt/mssql-tools18/bin/sqlcmd -U sa -P $P -C'
+echo 'Running Lab 1.1...'
+$CMD -S $S1 -Q 'SELECT @@SERVERNAME;'
+echo 'Running Lab 1.2...'
+$CMD -S $S1 -Q 'CREATE DATABASE Test;'
+echo 'Tasks completed.'
