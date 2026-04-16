@@ -1,0 +1,64 @@
+Lab 2.2: Replication and High Availability (HA/DR)
+Step 1: Configure Distribution (sql1)
+Set up the first instance as a Distributor and Publisher.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+EXEC sp_adddistributor @distributor = 'sql1', @password = 'YourStrongPassword123!';
+EXEC sp_adddistributiondb @database = 'distribution';
+EXEC sp_adddistpublisher @publisher = 'sql1', @distribution_db = 'distribution', @working_directory = '/var/opt/mssql/data';
+"
+
+
+Step 2: Create Publication (sql1)
+Enable replication for 'ProjectDB' and create a transactional publication for the 'Orders' table.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
+EXEC sp_replicationdboption @dbname = 'ProjectDB', @optname = 'publish', @value = 'true';
+EXEC sp_addpublication @publication = 'Pub_Orders', @repl_freq = 'continuous', @status = 'active', @independent_agent = 'true';
+EXEC sp_addpublication_snapshot @publication = 'Pub_Orders', @agent_name = 'sql1_snapshot_agent';
+EXEC sp_addarticle @publication = 'Pub_Orders', @article = 'Orders', @source_object = 'Orders', @type = 'logbased', @destination_table = 'Orders_Replica';
+"
+
+
+Step 3: Create Push Subscription (sql1 to sql3)
+Configure sql3 as a subscriber to receive data from sql1.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
+EXEC sp_addsubscription @publication = 'Pub_Orders', @subscriber = 'sql3', @destination_db = 'ProjectDB_Sub', @subscription_type = 'Push';
+EXEC sp_addpushsubscription_agent @publication = 'Pub_Orders', @subscriber = 'sql3', @subscriber_db = 'ProjectDB_Sub', @subscriber_security_mode = 0, @subscriber_login = 'sa', @subscriber_password = 'YourStrongPassword123!';
+"
+
+
+Step 4: Configure Log Shipping (sql1 to sql2)
+Setup manual Log Shipping sequence between sql1 (primary) and sql2 (secondary).
+# On sql1: Create backup job step
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+EXEC msdb.dbo.sp_add_job @job_name = 'LS_Backup_ProjectDB';
+EXEC msdb.dbo.sp_add_jobstep @job_name = 'LS_Backup_ProjectDB', @step_name = 'Backup', 
+    @command = 'BACKUP LOG ProjectDB TO DISK = ''/var/opt/mssql/backup/ProjectDB_LS.trn'' WITH FORMAT';
+EXEC msdb.dbo.sp_add_jobserver @job_name = 'LS_Backup_ProjectDB';
+"
+
+# On sql2: Initialize DB and create restore job
+sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -Q "
+RESTORE DATABASE ProjectDB_LS FROM DISK = '/var/opt/mssql/backup/Test.bak' WITH NORECOVERY, 
+    MOVE 'testdata_a' TO '/var/opt/mssql/data/ls_data.mdf',
+    MOVE 'testdata_b' TO '/var/opt/mssql/data/ls_data.ndf',
+    MOVE 'Test_log' TO '/var/opt/mssql/data/ls_log.ldf';
+GO
+EXEC msdb.dbo.sp_add_job @job_name = 'LS_Restore_ProjectDB';
+EXEC msdb.dbo.sp_add_jobstep @job_name = 'LS_Restore_ProjectDB', @step_name = 'Restore', 
+    @command = 'RESTORE LOG ProjectDB_LS FROM DISK = ''/var/opt/mssql/backup/ProjectDB_LS.trn'' WITH NORECOVERY';
+EXEC msdb.dbo.sp_add_jobserver @job_name = 'LS_Restore_ProjectDB';
+"
+
+
+Step 5: Mechanism Description for the Company Scenario
+Infrastructure recommendations:
+Server 1 (Orders) to Client: Use Transactional Replication. This ensures daily (or real-time) delivery of order data to the client database.
+Server 2 (Suppliers) to Client: Use SQL Server Integration Services (SSIS) or daily Differential Backups. Since supplier data changes less frequently, a batch process is more efficient.
+Server 3 (Stocks) to Client: Use Transactional Replication or AlwaysOn Availability Groups. Since stock data is online/live, minimal latency is required.
+Data Preservation: Implement a unified Backup Strategy (Full/Diff/Log) on all servers with backups stored in the /var/opt/mssql/backup shared volume (emulating a network share).
+Step 6: Verify Replication Status
+Check if the subscription is active on the distributor.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "SELECT * FROM distribution.dbo.MSsubscriptions;"
+
+
+Expected Result: A record showing sql3 as a subscriber for the Pub_Orders publication.
