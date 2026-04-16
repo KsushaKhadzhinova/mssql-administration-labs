@@ -1,0 +1,40 @@
+Lab 1.1: Installation and Basic Configuration
+Step 1: Verify Running Instances
+Execute this to check if both containers (default and named instance equivalents) are active.
+docker ps
+
+
+Expected Result: Table showing sql1 and sql2 containers with status Up.
+Step 2: Connection Test (Default Instance)
+Connect to the first instance and verify its name.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "SELECT @@SERVERNAME"
+
+
+Expected Result: Output showing the container ID or server name for the first instance.
+Step 3: Check Server Properties
+Retrieve version, edition, and collation information via CLI.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "SELECT SERVERPROPERTY('ProductVersion') AS Version, SERVERPROPERTY('Edition') AS Edition, SERVERPROPERTY('Collation') AS Collation"
+
+
+Expected Result: List showing version (e.g., 16.0.x), edition (Developer), and collation.
+Step 4: Stop and Start Server
+Demonstrate service management through Docker commands.
+docker stop sql1
+docker ps
+docker start sql1
+docker ps
+
+
+Expected Result: sql1 disappears from the list after stop and reappears after start.
+Step 5: Connection Test (Named Instance)
+Connect to the second instance using its specific host port.
+sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -Q "SELECT @@SERVERNAME"
+
+
+Expected Result: Output showing the server name for the second instance.
+Step 6: Verify Port Configuration
+Confirm that the second instance is listening on the assigned external port.
+docker inspect --format='{{range $p, $conf := .NetworkSettings.Ports}}{{$p}} -> {{(index $conf 0).HostPort}}{{end}}' sql2
+
+
+Expected Result: 1433/tcp -> 14332.
