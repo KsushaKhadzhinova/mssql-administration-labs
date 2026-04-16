@@ -1,0 +1,89 @@
+Lab 2.1: Administration Automation
+Step 1: Verify SQL Server Agent
+Check if the Agent service is running on both instances.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "SELECT dss.status_desc FROM sys.dm_server_services dss WHERE dss.servicename LIKE 'SQL Server Agent%';"
+sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -Q "SELECT dss.status_desc FROM sys.dm_server_services dss WHERE dss.servicename LIKE 'SQL Server Agent%';"
+
+
+Step 2: Enable Database Mail and Configure Account
+Setup Database Mail for alerts using the MailHog container (port 1025) defined in your setup.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+EXEC sp_configure 'show advanced options', 1;
+RECONFIGURE;
+EXEC sp_configure 'Database Mail XPs', 1;
+RECONFIGURE;
+GO
+EXEC msdb.dbo.sysmail_add_account_sp
+    @account_name = 'LabAccount',
+    @email_address = 'sqladmin@example.com',
+    @display_name = 'SQL Automation',
+    @mailserver_name = 'mailhog',
+    @port = 1025;
+EXEC msdb.dbo.sysmail_add_profile_sp
+    @profile_name = 'LabProfile';
+EXEC msdb.dbo.sysmail_add_profileaccount_sp
+    @profile_name = 'LabProfile',
+    @account_name = 'LabAccount',
+    @sequence_number = 1;
+"
+
+
+Step 3: Create Operator for Alerts
+Create an administrator contact for notifications.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+EXEC msdb.dbo.sp_add_operator 
+    @name = 'DBA_Admin', 
+    @enabled = 1, 
+    @email_address = 'admin@example.com';
+"
+
+
+Step 4: Create Backup Jobs and Schedules
+Create two jobs: one for Full Backup (daily) and one for Log Backup (hourly).
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+EXEC msdb.dbo.sp_add_job @job_name = 'Daily_Full_Backup';
+EXEC msdb.dbo.sp_add_jobstep @job_name = 'Daily_Full_Backup', @step_name = 'Backup_Step', 
+    @command = 'BACKUP DATABASE Test TO DISK = ''/var/opt/mssql/backup/Test_Auto_Full.bak'' WITH FORMAT';
+EXEC msdb.dbo.sp_add_schedule @schedule_name = 'Daily_Schedule', @freq_type = 4, @freq_interval = 1, @active_start_time = 000000;
+EXEC msdb.dbo.sp_attach_schedule @job_name = 'Daily_Full_Backup', @schedule_name = 'Daily_Schedule';
+EXEC msdb.dbo.sp_add_jobserver @job_name = 'Daily_Full_Backup';
+
+EXEC msdb.dbo.sp_add_job @job_name = 'Hourly_Log_Backup';
+EXEC msdb.dbo.sp_add_jobstep @job_name = 'Hourly_Log_Backup', @step_name = 'Log_Step', 
+    @command = 'BACKUP LOG Test TO DISK = ''/var/opt/mssql/backup/Test_Auto_Log.trn''';
+EXEC msdb.dbo.sp_add_schedule @schedule_name = 'Hourly_Schedule', @freq_type = 4, @freq_interval = 1, @freq_subday_type = 8, @freq_subday_interval = 1;
+EXEC msdb.dbo.sp_attach_schedule @job_name = 'Hourly_Log_Backup', @schedule_name = 'Hourly_Schedule';
+EXEC msdb.dbo.sp_add_jobserver @job_name = 'Hourly_Log_Backup';
+"
+
+
+Step 5: Create Alert with Job Execution
+Setup an alert for Error 823 (I/O error) that triggers the Full Backup job and sends an email.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+EXEC msdb.dbo.sp_add_alert @name = 'Critical_IO_Error', @message_id = 823, @severity = 0, 
+    @notification_message = 'IO Error Detected!', @job_name = 'Daily_Full_Backup';
+EXEC msdb.dbo.sp_add_notification @alert_name = 'Critical_IO_Error', @operator_name = 'DBA_Admin', @notification_method = 1;
+"
+
+
+Step 6: Multi-Instance Job Execution Example
+Run a T-SQL command on sql2 from the Linux shell to simulate remote task management.
+sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -Q "
+EXEC msdb.dbo.sp_add_job @job_name = 'Remote_Check';
+EXEC msdb.dbo.sp_add_jobstep @job_name = 'Remote_Check', @step_name = 'Check_Step', @command = 'DBCC CHECKDB(Test_JD)';
+EXEC msdb.dbo.sp_add_jobserver @job_name = 'Remote_Check';
+EXEC msdb.dbo.sp_start_job @job_name = 'Remote_Check';
+"
+
+
+Step 7: Verify Job History
+Check the status of the executed jobs.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+SELECT j.name, h.run_date, h.run_time, h.run_status 
+FROM msdb.dbo.sysjobhistory h 
+JOIN msdb.dbo.sysjobs j ON h.job_id = j.job_id 
+ORDER BY h.run_date DESC, h.run_time DESC;
+"
+
+
+Expected Result: Table showing Daily_Full_Backup or Remote_Check with run_status = 1 (Success).
