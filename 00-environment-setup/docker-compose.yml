@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  sql1:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql1
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrongPassword123!
+      - MSSQL_AGENT_ENABLED=True
+    ports:
+      - "14331:1433"
+    volumes:
+      - ./volumes/sql1/data:/var/opt/mssql
+      - ./shared/backup:/var/opt/mssql/backup
+  sql2:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql2
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrongPassword123!
+      - MSSQL_AGENT_ENABLED=True
+    ports:
+      - "14332:1433"
+    volumes:
+      - ./volumes/sql2/data:/var/opt/mssql
+      - ./shared/backup:/var/opt/mssql/backup
+  sql3:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql3
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourStrongPassword123!
+      - MSSQL_AGENT_ENABLED=True
+    ports:
+      - "14333:1433"
+    volumes:
+      - ./volumes/sql3/data:/var/opt/mssql
+      - ./shared/backup:/var/opt/mssql/backup
