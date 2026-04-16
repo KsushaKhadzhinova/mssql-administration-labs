@@ -1,0 +1,90 @@
+Lab 2.3: Monitoring and Troubleshooting
+Step 1: System Activity Monitoring (CLI)
+View active processes and resource waits using Dynamic Management Views.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+SELECT session_id, status, command, cpu_time, total_elapsed_time, wait_type, last_wait_type 
+FROM sys.dm_exec_requests 
+WHERE session_id > 50;
+"
+
+
+Step 2: Create Extended Events Session (Trace Replacement)
+Setup a trace for batch completions and save it to a file.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+CREATE EVENT SESSION [LabTrace] ON SERVER 
+ADD EVENT sqlserver.sql_batch_completed(
+    ACTION(package0.collect_system_time, sqlserver.client_app_name, sqlserver.sql_text)
+)
+ADD TARGET package0.event_file(SET filename='/var/opt/mssql/backup/LabTrace.xel');
+ALTER EVENT SESSION [LabTrace] ON SERVER STATE = START;
+"
+
+
+Step 3: Populate Table with 50,000+ Records
+Generate test data for 'OrderDetails' to perform performance testing.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
+SET NOCOUNT ON;
+DECLARE @i INT = 1;
+WHILE @i <= 60000
+BEGIN
+    INSERT INTO OrderDetails (OrderID, ProductID, Quantity, PriceAtOrder)
+    VALUES (1, 1, @i % 10 + 1, 100.00);
+    SET @i = @i + 1;
+END;
+"
+
+
+Step 4: Analyze Query Plan without Indexes
+Enable text-based showplan and execute a search query.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
+SET SHOWPLAN_TEXT ON;
+GO
+SELECT * FROM OrderDetails WHERE Quantity = 5;
+GO
+SET SHOWPLAN_TEXT OFF;
+"
+
+
+Expected Result: Look for 'Table Scan' or 'Index Scan' in the output.
+Step 5: Create Non-Clustered and Columnstore Indexes
+Optimize the table for search and analytical queries.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
+CREATE NONCLUSTERED INDEX IX_OrderDetails_Quantity ON OrderDetails(Quantity);
+CREATE COLUMNSTORE INDEX IX_OrderDetails_ColumnStore ON OrderDetails(ProductID, Quantity, PriceAtOrder);
+"
+
+
+Step 6: Analyze Query Plan with Indexes
+Execute the same query and compare the execution plan.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
+SET SHOWPLAN_TEXT ON;
+GO
+SELECT * FROM OrderDetails WHERE Quantity = 5;
+GO
+SET SHOWPLAN_TEXT OFF;
+"
+
+
+Expected Result: The plan should now show 'Index Seek' or 'Columnstore Index Scan'.
+Step 7: Compare Performance Results
+Measure execution time for comparison.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
+SET STATISTICS TIME ON;
+GO
+SELECT SUM(Quantity) FROM OrderDetails;
+GO
+SET STATISTICS TIME OFF;
+"
+
+
+Step 8: View Trace Results and Cleanup
+Read the captured events from the .xel file and stop the session.
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
+SELECT event_data = CAST(event_data AS XML) 
+FROM sys.fn_xe_file_target_read_file('/var/opt/mssql/backup/LabTrace*.xel', NULL, NULL, NULL);
+
+ALTER EVENT SESSION [LabTrace] ON SERVER STATE = STOP;
+DROP EVENT SESSION [LabTrace] ON SERVER;
+"
+
+
