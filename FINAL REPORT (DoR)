@@ -1,0 +1,33 @@
+Verification of Requirements (Labs 1.1 - 2.3)
+1. Environment & Infrastructure (Setup phase)
+Requirement: WSL2, Ubuntu, Docker, 3 instances (sql1, sql2, sql3).
+Status: Met. PowerShell script for WSL2 and Bash scripts for Docker provided. docker-compose.yml configures 3 isolated instances with shared backup volumes and Agent enabled.
+2. Database Structure (ProjectDB)
+Requirement: Minimum 7 tables.
+Status: Met. Created ProjectDB with 7 linked tables: Categories, Suppliers, Products, Stocks, Customers, Orders, OrderDetails.
+3. Lab 1.1: Installation
+Requirement: Default and Named instances, mixed mode, port configuration.
+Status: Met. sql1 acts as default (14331), sql2 as named (14332). Commands for connectivity and server properties provided.
+4. Lab 1.2: Database and Files
+Requirement: Filegroups, .ndf files, growth limits, custom schemas, ownership.
+Status: Met. Implemented TestFileGroup, testdata_b.ndf, and OtherOwnerSchema via T-SQL.
+5. Lab 1.3: Backup and Restore
+Requirement: Master backup, file corruption demo (dd), cross-instance restore, snapshots, log chains.
+Status: Met. Scripts include physical file corruption using dd and Point-in-time recovery via transaction logs.
+6. Lab 1.4: Security
+Requirement: Logins, Users, Roles (Manager/Employee), DENY permissions, schema authorization.
+Status: Met. Fully implemented TestLogin1 (sysadmin) and TestUser1/2 with restrictive roles.
+7. Lab 2.1: Automation
+Requirement: SQL Agent, Database Mail (MailHog), Jobs, Alerts.
+Status: Met. Scripts configure msdb.dbo.sysmail, create backup schedules, and setup alerts for critical I/O errors (Error 823).
+8. Lab 2.2: Replication & HA
+Requirement: Distribution, Publication, Subscription, Log Shipping, Company scenario.
+Status: Met. Configured sql1 as Publisher and sql3 as Subscriber. Manual Log Shipping logic implemented for sql2.
+9. Lab 2.3: Monitoring & Troubleshooting
+Requirement: Trace (Extended Events), 50k+ records, Execution Plans, Indexes (Non-clustered/Columnstore).
+Status: Met. Replaced SSMS UI with SET SHOWPLAN_TEXT ON. Populated table with 60,000 records. Comparison scripts for Columnstore vs Rowstore provided.
+10. Script Constraints
+Console only (CLI): Yes.
+No Russian in scripts: Yes.
+No comments in scripts: Yes.
+Linux Bash/sqlcmd based: Yes.
