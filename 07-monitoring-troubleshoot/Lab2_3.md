@@ -1,15 +1,31 @@
-Lab 2.3: Monitoring and Troubleshooting
-Step 1: System Activity Monitoring (CLI)
-View active processes and resource waits using Dynamic Management Views.
+# Lab 2.3: Monitoring and Troubleshooting
+
+This lab covers live system monitoring, Extended Events, performance testing, indexing, execution plan comparison, and trace cleanup.
+
+---
+
+## [STEP 1] System Activity Monitoring (CLI)
+
+View active processes and resource waits using Dynamic Management Views:
+
+```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
 SELECT session_id, status, command, cpu_time, total_elapsed_time, wait_type, last_wait_type 
 FROM sys.dm_exec_requests 
 WHERE session_id > 50;
 "
+```
 
+**Expected Result:**  
+A table showing active requests, CPU time, elapsed time, and wait information.
 
-Step 2: Create Extended Events Session (Trace Replacement)
-Setup a trace for batch completions and save it to a file.
+---
+
+## [STEP 2] Create Extended Events Session
+
+Set up an Extended Events session for batch completions and save it to a file:
+
+```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
 CREATE EVENT SESSION [LabTrace] ON SERVER 
 ADD EVENT sqlserver.sql_batch_completed(
@@ -18,10 +34,18 @@ ADD EVENT sqlserver.sql_batch_completed(
 ADD TARGET package0.event_file(SET filename='/var/opt/mssql/backup/LabTrace.xel');
 ALTER EVENT SESSION [LabTrace] ON SERVER STATE = START;
 "
+```
 
+**Expected Result:**  
+The session starts and begins writing events to `LabTrace.xel`.
 
-Step 3: Populate Table with 50,000+ Records
-Generate test data for 'OrderDetails' to perform performance testing.
+---
+
+## [STEP 3] Populate Table with 50,000+ Records
+
+Generate test data in `OrderDetails` for performance testing:
+
+```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
 SET NOCOUNT ON;
 DECLARE @i INT = 1;
@@ -32,10 +56,18 @@ BEGIN
     SET @i = @i + 1;
 END;
 "
+```
 
+**Expected Result:**  
+60,000 rows are inserted into `OrderDetails`.
 
-Step 4: Analyze Query Plan without Indexes
-Enable text-based showplan and execute a search query.
+---
+
+## [STEP 4] Analyze Query Plan without Indexes
+
+Enable text-based showplan and run a search query:
+
+```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
 SET SHOWPLAN_TEXT ON;
 GO
@@ -43,19 +75,34 @@ SELECT * FROM OrderDetails WHERE Quantity = 5;
 GO
 SET SHOWPLAN_TEXT OFF;
 "
+```
 
+**Expected Result:**  
+The plan should show `Table Scan` or `Index Scan`.
 
-Expected Result: Look for 'Table Scan' or 'Index Scan' in the output.
-Step 5: Create Non-Clustered and Columnstore Indexes
-Optimize the table for search and analytical queries.
+---
+
+## [STEP 5] Create Non-Clustered and Columnstore Indexes
+
+Optimize the table for search and analytical workloads:
+
+```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
 CREATE NONCLUSTERED INDEX IX_OrderDetails_Quantity ON OrderDetails(Quantity);
 CREATE COLUMNSTORE INDEX IX_OrderDetails_ColumnStore ON OrderDetails(ProductID, Quantity, PriceAtOrder);
 "
+```
 
+**Expected Result:**  
+Indexes are created successfully.
 
-Step 6: Analyze Query Plan with Indexes
-Execute the same query and compare the execution plan.
+---
+
+## [STEP 6] Analyze Query Plan with Indexes
+
+Run the same query again and compare the execution plan:
+
+```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
 SET SHOWPLAN_TEXT ON;
 GO
@@ -63,11 +110,18 @@ SELECT * FROM OrderDetails WHERE Quantity = 5;
 GO
 SET SHOWPLAN_TEXT OFF;
 "
+```
 
+**Expected Result:**  
+The plan should now show `Index Seek` or `Columnstore Index Scan`.
 
-Expected Result: The plan should now show 'Index Seek' or 'Columnstore Index Scan'.
-Step 7: Compare Performance Results
-Measure execution time for comparison.
+---
+
+## [STEP 7] Compare Performance Results
+
+Measure execution time for a simple aggregate query:
+
+```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -d ProjectDB -Q "
 SET STATISTICS TIME ON;
 GO
@@ -75,10 +129,18 @@ SELECT SUM(Quantity) FROM OrderDetails;
 GO
 SET STATISTICS TIME OFF;
 "
+```
 
+**Expected Result:**  
+The output shows CPU time and elapsed time for the query.
 
-Step 8: View Trace Results and Cleanup
-Read the captured events from the .xel file and stop the session.
+---
+
+## [STEP 8] View Trace Results and Cleanup
+
+Read captured events from the `.xel` file and stop the session:
+
+```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
 SELECT event_data = CAST(event_data AS XML) 
 FROM sys.fn_xe_file_target_read_file('/var/opt/mssql/backup/LabTrace*.xel', NULL, NULL, NULL);
@@ -86,5 +148,11 @@ FROM sys.fn_xe_file_target_read_file('/var/opt/mssql/backup/LabTrace*.xel', NULL
 ALTER EVENT SESSION [LabTrace] ON SERVER STATE = STOP;
 DROP EVENT SESSION [LabTrace] ON SERVER;
 "
+```
 
+**Expected Result:**  
+Captured events are returned from the trace file, then the Extended Events session is stopped and removed.
 
+---
+
+**End of Lab 2.3**
