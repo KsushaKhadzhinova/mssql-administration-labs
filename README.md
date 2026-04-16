@@ -56,7 +56,3 @@
 ```bash
 chmod +x scripts/cleanup.sh
 ./scripts/cleanup.sh
-
----
-Контактная информация: kseniyakhadzhynava@gmail.com
----
