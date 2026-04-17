@@ -6,7 +6,7 @@ P="YourStrongPassword123!"
 MY_EMAIL="kseniyakhadzhynava@gmail.com"
 CMD="/opt/mssql-tools18/bin/sqlcmd -U sa -P $P -C"
 
-echo "Initialization started..."
+echo "Starting automated lab execution..."
 
 $CMD -S $S1 -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'Test') CREATE DATABASE [Test] ON PRIMARY (NAME = N'testdata_a', FILENAME = N'/var/opt/mssql/data/testdata_a.mdf', SIZE = 10MB);"
 $CMD -S $S1 -Q "BACKUP DATABASE [Test] TO DISK = '/var/opt/mssql/backup/test.bak' WITH FORMAT;"
@@ -22,8 +22,9 @@ $CMD -S $S1 -Q "IF NOT EXISTS (SELECT * FROM msdb.dbo.sysoperators WHERE name = 
 
 $CMD -S $S1 -i ../06-replication-ha/setup_replication_distributor.sql
 
+$CMD -S $S1 -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'ProjectDB') CREATE DATABASE [ProjectDB];"
 $CMD -S $S1 -d ProjectDB -Q "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'OrderDetails') CREATE TABLE OrderDetails (ID INT IDENTITY PRIMARY KEY, ProductID INT, Quantity INT);"
 $CMD -S $S1 -d ProjectDB -Q "INSERT INTO OrderDetails (ProductID, Quantity) SELECT TOP 100 1, 10 FROM sys.objects;"
 $CMD -S $S1 -d ProjectDB -Q "IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_CS_OrderDetails') CREATE COLUMNSTORE INDEX [IX_CS_OrderDetails] ON [OrderDetails] (ProductID, Quantity);"
 
-echo "All labs executed successfully."
+echo "Execution complete."
