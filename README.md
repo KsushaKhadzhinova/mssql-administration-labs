@@ -1,62 +1,93 @@
-# MS SQL Server Administration: Full Laboratory Portfolio
+# 🗄️ MS SQL Server Administration: Full Laboratory Portfolio
+
 **Студент:** Ксения Хаджинова  
-**Стек:** Docker, SQL Server 2022 (Linux), Ubuntu (WSL2), Bash
+**Стек технологий:** Docker, SQL Server 2022 (Linux Edition), Ubuntu (WSL2), Bash, T-SQL
 
-Этот репозиторий содержит полный цикл работ по администрированию Microsoft SQL Server: от развертывания инфраструктуры до настройки репликации и мониторинга производительности.
-
----
-
-## Архитектура инфраструктуры
-Проект развернут в изолированной сети Docker и состоит из трех узлов, что позволяет имитировать работу распределенной корпоративной среды.
-
-* **sql1 (Port 14331):** Основной узел (Издатель, Дистрибьютор).
-* **sql2 (Port 14332):** Узел репликации (Подписчик).
-* **sql3 (Port 14333):** Резервный узел (Log Shipping Standby).
-
-> [!IMPORTANT]
-> **Структура баз данных:**
-> Проект разделен на две части для чистоты демонстрации:
-> 1. **Database `Test`** (Labs 1.2 - 1.3) — используется как "песочница" для отработки физического управления файлами и сценариев аварийного восстановления (Corruption/Restore).
-> 2. **Database `ProjectDB`** (Labs 1.4 - 2.3) — основная "промышленная" база для настройки безопасности, автоматизации, репликации и мониторинга производительности.
+Этот репозиторий представляет собой комплексный проект по развертыванию, защите и оптимизации инфраструктуры MS SQL Server в контейнеризированной среде.
 
 ---
 
-## Навигация по курсу
+## 🏗️ Архитектура инфраструктуры
 
-| Лабораторная работа | Описание | Скрипты |
-| :--- | :--- | :--- |
-| **[00-environment-setup](./00-environment-setup)** | Развертывание Docker-инфраструктуры и инициализация данных. | `docker-compose.yml`, `init.sql` |
-| **[01-sql-installation](./01-sql-installation)** | Проверка сетевой связности и параметров инстансов. | `check_instances.sh` |
-| **[02-database-management](./02-database-management)** | Управление файловыми группами, лимитами роста и схемами. | `create_test_db.sql` |
-| **[03-backup-restore](./03-backup-restore)** | Disaster Recovery: бэкапы, имитация порчи файлов и восстановление. | `simulate_corruption.sh` |
-| **[04-security-management](./04-security-management)** | Безопасность: роли, пользователи, иерархия GRANT/DENY. | `setup_logins_roles.sql` |
-| **[05-admin-automation](./05-admin-automation)** | Автоматизация: SQL Agent Jobs, Alerts и Database Mail. | `configure_agent_mail.sql` |
-| **[06-replication-ha](./06-replication-ha)** | Высокая доступность: транзакционная репликация и Log Shipping. | `verify_lab_06.sh` |
-| **[07-monitoring-troubleshoot](./07-monitoring-troubleshoot)** | Оптимизация: DMV, Extended Events и Columnstore индексы. | `query_optimization.sql` |
+Проект имитирует распределенную корпоративную сеть из трех узлов, взаимодействующих через внутреннюю сеть Docker.
+
+```mermaid
+graph TD
+    subgraph Docker_Network [Виртуальная сеть Docker]
+    SQL1[<b>sql1</b><br/>Publisher / Distributor<br/>Port: 14331] 
+    SQL2[<b>sql2</b><br/>Subscriber<br/>Port: 14332]
+    SQL3[<b>sql3</b><br/>Log Shipping Standby<br/>Port: 14333]
+    
+    SQL1 -- Transactional Replication --> SQL2
+    SQL1 -- Log Shipping --> SQL3
+    end
+
+    WSL[<b>Ubuntu WSL2</b><br/>Управление: sqlcmd / Bash] 
+    WSL --> SQL1
+    WSL --> SQL2
+    WSL --> SQL3
+```
+
+> [!IMPORTANT]  
+> **Логика разделения баз данных:**  
+> Для чистоты демонстрации проект использует:  
+> - **Database Test** (Лабы 1.2–1.3): "Песочница" для файлов, лимитов роста и Disaster Recovery  
+> - **Database ProjectDB** (Лабы 1.4–2.3): Промышленная среда для безопасности, автоматизации и репликации
 
 ---
 
-## Быстрый запуск
+## 📚 Навигация по курсу
 
-1.  **Клонирование репозитория:**
-    ```bash
-    git clone [https://github.com/KsushaKhadzhinova/mssql-administration-labs.git](https://github.com/KsushaKhadzhinova/mssql-administration-labs.git)
-    cd mssql-administration-labs
-    ```
+| Папка | Описание задачи | Основные скрипты |
+|-------|-----------------|------------------|
+| `00-environment-setup` | Подготовка Docker-среды и сидинг данных | `docker-compose.yml`, `init.sql` |
+| `01-sql-installation` | Проверка инстансов и связности | `check_version.sql`, `check_instances.sh` |
+| `02-database-management` | Filegroups, NDF-файлы, схемы | `create_test_db.sql`, `check_db_files.sql` |
+| `03-backup-restore` | Disaster Recovery, corruption | `simulate_corruption.sh`, `restore_after_corruption.sql` |
+| `04-security-management` | Роли, логины, DENY | `setup_logins_roles.sql`, `test_security_access.sql` |
+| `05-admin-automation` | SQL Agent, Alerts, Database Mail | `configure_agent_mail.sql`, `create_backup_job.sql` |
+| `06-replication-ha` | Репликация sql1→sql2, Standby sql3 | `setup_replication_distributor.sql`, `verify_lab_06.sh` |
+| `07-monitoring-troubleshoot` | DMV, Extended Events, Columnstore | `query_optimization.sql`, `extended_events_setup.sql` |
 
-2.  **Запуск инфраструктуры:**
-    ```bash
-    docker-compose up -d
-    ```
+---
 
-3.  **Автоматическое выполнение всех лаб:**
-    ```bash
-    chmod +x scripts/run_all_labs.sh
-    ./scripts/run_all_labs.sh
-    ```
+## 🚀 Быстрый запуск
 
-## Очистка системы
-Чтобы полностью удалить контейнеры, временные данные и сбросить систему до начального состояния, используйте:
+### 1. Подготовка среды
+
+```bash
+git clone https://github.com/KsushaKhadzhinova/mssql-administration-labs.git
+cd mssql-administration-labs
+docker-compose up -d
+```
+
+### 2. Автоматическое выполнение всех заданий
+
+```bash
+chmod +x scripts/run_all_labs.sh
+./scripts/run_all_labs.sh
+```
+
+---
+
+## 🧹 Обслуживание
+
+### Полная очистка
+
+Сброс системы до начального состояния:
+
 ```bash
 chmod +x scripts/cleanup.sh
 ./scripts/cleanup.sh
+```
+
+---
+
+## 📩 Контакты
+
+**Автор:** Ксения Хаджинова  
+**Email:** kseniyakhadzhynava@gmail.com
+
+---
+
+**Проект готов к демонстрации!** Загружай в корень репозитория.
