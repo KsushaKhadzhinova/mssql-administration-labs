@@ -14,7 +14,7 @@ cd ~/mssql-administration-labs/03-backup-restore
 
 ### Prerequisites
 
-- Infrastructure from `00-environment-setup` active (`docker ps` shows `sql1` and `sql2`)
+- Infrastructure from `00-environment-setup` active (`sql1` and `sql2` running)
 - `Test` database from `02-database-management` created
 
 ---
@@ -23,26 +23,18 @@ cd ~/mssql-administration-labs/03-backup-restore
 
 ### Step 1: Create Initial Backups
 
-Set `Test` database to FULL recovery model:
-
 ```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i full_backups.sql
 ```
 
 ### Step 2: Simulate Physical Corruption
 
-Overwrite data file headers:
-
 ```bash
 chmod +x simulate_corruption.sh
 ./simulate_corruption.sh
 ```
 
-**Note:** `Test` database on `sql1` enters `SUSPECT` or `RECOVERY_PENDING` state.
-
 ### Step 3: Recover the Primary Database
-
-Restore from `test_full.bak`:
 
 ```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i restore_after_corruption.sql
@@ -50,23 +42,17 @@ sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i restore_after_
 
 ### Step 4: Cross-Instance Migration
 
-Restore to `sql2` with new paths:
-
 ```bash
 sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -i restore_on_node2.sql
 ```
 
 ### Step 5: Database Snapshots & Revert
 
-Create snapshot and test revert:
-
 ```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i database_snapshots.sql
 ```
 
 ### Step 6: Transaction Log Recovery
-
-Full backup → log backup → data loss → point-in-time recovery:
 
 ```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i transaction_log_recovery.sql
@@ -78,11 +64,11 @@ sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i transaction_lo
 
 | Task | Script | Expected Result |
 |------|--------|-----------------|
-| Backups | `full_backups.sql` | Files in `./shared/backup` on host |
-| Corruption | `simulate_corruption.sh` | I/O corruption in error logs; DB offline |
-| Recovery | `restore_after_corruption.sql` | `Test` returns to `ONLINE` |
+| Backups | `full_backups.sql` | Recovery model `FULL`; files in shared folder |
+| Corruption | `simulate_corruption.sh` | Database `SUSPECT`/`RECOVERY_PENDING` |
+| Recovery | `restore_after_corruption.sql` | `Test` database `ONLINE` |
 | Relocation | `restore_on_node2.sql` | `Test_Restored` on `sql2` |
-| Snapshot | `database_snapshots.sql` | Records restored via `RESTORE...FROM SNAPSHOT` |
+| Snapshot | `database_snapshots.sql` | Data reverted via snapshot |
 | Log Recovery | `transaction_log_recovery.sql` | `RecoveryTest` table restored |
 
 ---
@@ -90,5 +76,9 @@ sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i transaction_lo
 ## TECHNICAL NOTES
 
 - **Storage Mapping:** `/var/opt/mssql/backup` (container) → `./shared/backup` (host)
-- **Linux Permissions:** `simulate_corruption.sh` requires `sudo` for volume access
-- **Recovery Models:** FULL recovery required for transaction log chain
+- **Permissions:** `simulate_corruption.sh` requires `sudo`
+- **Recovery Models:** FULL recovery mandatory for transaction log backups
+
+---
+
+**Lab 1.3 complete**
