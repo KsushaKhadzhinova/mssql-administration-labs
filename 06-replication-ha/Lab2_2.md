@@ -1,6 +1,6 @@
 # Lab 2.2: Replication and High Availability (HA/DR)
 
-This lab configures replication, log shipping, and practical HA/DR strategy.
+This lab configures replication, log shipping, and practical HA/DR strategy for company scenario.
 
 ---
 
@@ -12,11 +12,9 @@ Set up first instance as Distributor and Publisher:
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
 EXEC sp_adddistributor @distributor = 'sql1', @password = 'YourStrongPassword123!';
 EXEC sp_adddistributiondb @database = 'distribution';
-EXEC sp_adddistpublisher @publisher = 'sql1', @distribution_db = 'distribution', @working_directory = '/var/opt/mssql/data';
+EXEC sp_adddistpublisher @publisher = 'sql1', @distribution_db = 'distribution', @working_directory = '/var/opt/mssql/backup';
 "
 ```
-
-**Expected Result:** Distribution database created, `sql1` configured as Distributor/Publisher.
 
 ---
 
@@ -34,13 +32,11 @@ EXEC sp_addarticle @publication = 'Pub_ProjectDB_Data', @article = 'Categories',
 "
 ```
 
-**Expected Result:** `Pub_ProjectDB_Data` created with articles.
-
 ---
 
 ## STEP 3: Create Push Subscription (sql1 → sql2)
 
-Initialize replica database and configure subscription:
+Initialize replica and configure subscription:
 
 ```bash
 sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -Q "CREATE DATABASE ProjectDB_Replica;"
@@ -50,13 +46,11 @@ EXEC sp_addpushsubscription_agent @publication = 'Pub_ProjectDB_Data', @subscrib
 "
 ```
 
-**Expected Result:** `sql2` registered as push subscriber.
-
 ---
 
 ## STEP 4: Configure Log Shipping (sql1 → sql3)
 
-**On sql1 (backup job):**
+**sql1 (backup job):**
 
 ```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
@@ -66,7 +60,7 @@ EXEC msdb.dbo.sp_add_jobserver @job_name = 'LS_Backup_ProjectDB';
 "
 ```
 
-**On sql3 (restore job):**
+**sql3 (restore job):**
 
 ```bash
 sqlcmd -S localhost,14333 -U sa -P 'YourStrongPassword123!' -C -Q "
@@ -74,24 +68,19 @@ RESTORE DATABASE ProjectDB_LS FROM DISK = '/var/opt/mssql/backup/ProjectDB_Auto.
 MOVE 'ProjectDB' TO '/var/opt/mssql/data/ProjectDB_LS.mdf', 
 MOVE 'ProjectDB_log' TO '/var/opt/mssql/data/ProjectDB_LS.ldf';
 EXEC msdb.dbo.sp_add_job @job_name = 'LS_Restore_ProjectDB';
-EXEC msdb.dbo.sp_add_jobstep @job_name = 'LS_Restore_ProjectDB', @step_name = 'Restore_Step', 
-@command = 'RESTORE LOG ProjectDB_LS FROM DISK = ''/var/opt/mssql/backup/ProjectDB_LS.trn'' WITH NORECOVERY';
+EXEC msdb.dbo.sp_add_jobstep @job_name = 'LS_Restore_ProjectDB', @step_name = 'Restore_Step', @command = 'RESTORE LOG ProjectDB_LS FROM DISK = ''/var/opt/mssql/backup/ProjectDB_LS.trn'' WITH NORECOVERY';
 EXEC msdb.dbo.sp_add_jobserver @job_name = 'LS_Restore_ProjectDB';
 "
 ```
-
-**Expected Result:** Backup/restore jobs created for log shipping.
 
 ---
 
 ## STEP 5: Company Scenario Strategy
 
-**Infrastructure recommendations:**
-- **Orders → Client:** Transactional Replication (real-time)
-- **Suppliers → Client:** SSIS/daily differential (low frequency changes)
+**Recommendations:**
+- **Products/Categories → Client:** Transactional Replication (real-time)
+- **Suppliers → Client:** SSIS/daily differential backups (low frequency)
 - **Stocks → Client:** Transactional Replication/AlwaysOn (low latency)
-
-**Unified backup strategy:** Full/Differential/Log stored in shared `/var/opt/mssql/backup`.
 
 ---
 
@@ -101,4 +90,6 @@ EXEC msdb.dbo.sp_add_jobserver @job_name = 'LS_Restore_ProjectDB';
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "SELECT * FROM distribution.dbo.MSsubscriptions;"
 ```
 
-**Expected Result:** Record shows `sql2` as subscriber for `Pub_ProjectDB_Data`.
+---
+
+**End of Lab 2.2**
