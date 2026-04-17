@@ -1,5 +1,5 @@
 SELECT 
-    @@VERSION AS [Version Info],
+    @@VERSION AS [VersionInfo],
     SERVERPROPERTY('Edition') AS [Edition],
-    SERVERPROPERTY('ProductLevel') AS [Service Pack];
+    SERVERPROPERTY('ProductLevel') AS [ServicePack];
 GO
