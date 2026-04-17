@@ -57,7 +57,3 @@ The database `Test` was successfully recovered after a manual header corruption 
 
 ## 6. Conclusion
 The infrastructure meets all requirements for a professional MS SQL Server environment. The project is ready for production simulation and academic defense.
-
----
-**Verified by:** Kseniya Khadzhinova  
-**Role:** Database Administrator (DBA)
