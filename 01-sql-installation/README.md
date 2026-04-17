@@ -1,37 +1,37 @@
 # Lab 1.1: MS SQL Server Installation and Connectivity
 
-Эта лабораторная работа — фундамент проекта. Цель: развертывание трех экземпляров SQL Server и подтверждение их готовности.
+This laboratory work serves as the foundation of the project. The goal is to deploy three SQL Server instances and confirm their operational readiness.
 
 ---
 
-## Содержимое папки
+## Folder Contents
 
-| Файл | Описание |
-|------|----------|
-| `check_version.sql` | Проверка версии, редакции (Edition) и обновлений |
-| `check_instances.sh` | Проверка статуса контейнеров через Docker API |
-| `verify_connectivity.sh` | Проверка сетевой доступности портов 14331-14333 |
+| File | Description |
+|------|-------------|
+| `check_version.sql` | Checks version, edition, and updates |
+| `check_instances.sh` | Verifies container status via Docker API |
+| `verify_connectivity.sh` | Verifies network availability on ports 14331-14333 |
 
 ---
 
-## Пошаговое выполнение
+## Step-by-Step Execution
 
-### Шаг 1: Проверка статуса контейнеров
+### Step 1: Check container status
 
 ```bash
 chmod +x check_instances.sh
 ./check_instances.sh
 ```
 
-### Шаг 2: Верификация редакции (Критически важно)
+### Step 2: Edition Verification
 
-Developer/Enterprise Edition требуется для репликации и автоматизации:
+Developer or Enterprise Edition is required for replication and automation tasks:
 
 ```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i check_version.sql
 ```
 
-### Шаг 3: Проверка удаленного подключения
+### Step 3: Verify remote connection
 
 ```bash
 chmod +x verify_connectivity.sh
@@ -40,32 +40,34 @@ chmod +x verify_connectivity.sh
 
 ---
 
-## Ожидаемые результаты
+## Expected Results
 
-| Параметр | Ожидаемое значение |
-|----------|--------------------|
-| Контейнеры | Все 3 инстанса: `Up` или `Healthy` |
+| Parameter | Expected Value |
+|-----------|----------------|
+| Containers | All 3 instances: `Up` or `Healthy` |
 | Edition | `Developer Edition` |
-| Connectivity | Каждый порт отвечает именем сервера |
+| Connectivity | Each port responds with server name |
 
 ---
 
-## Технические заметки
+## Technical Notes
 
-### Выбор портов
+### Port Selection
 
-Диапазон `14331-14333` вместо `1433`:
-- Избегает конфликтов с локальным SQL Server на Windows
-- Имитирует именованные экземпляры в корпоративной сети
+Range `14331-14333` instead of default `1433`:
+- Avoids conflicts with local SQL Server on Windows host
+- Simulates named instances in corporate network
 
-### Почему важна проверка Edition?
+### Edition Requirements
 
-**SQL Server Express** не поддерживает:
-- SQL Server Agent (Лаба 2.1)
-- Replication (Лаба 2.2)
+**SQL Server Express** lacks:
+- SQL Server Agent (Lab 2.1)
+- Transactional Replication (Lab 2.2)
 
-**Образ:** `mcr.microsoft.com/mssql/server:2022-latest` = Developer Edition по умолчанию
+**Image:** `mcr.microsoft.com/mssql/server:2022-latest` = Developer Edition by default
 
-### Безопасность
+### Security
 
-Флаг `-C` (Trust Server Certificate) используется из-за самоподписанных сертификатов в Docker.
+`-C` flag (Trust Server Certificate) bypasses SSL verification for Docker's self-signed certificates.
+
+---
