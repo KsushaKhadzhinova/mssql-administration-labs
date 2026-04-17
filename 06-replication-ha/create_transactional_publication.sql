@@ -1,14 +1,12 @@
 USE [ProjectDB];
 GO
 
--- 1. Включение репликации для базы данных
 EXEC sp_replicationdboption 
     @dbname = N'ProjectDB', 
     @optname = N'publish', 
     @value = N'true';
 GO
 
--- 2. Создание публикации транзакций
 EXEC sp_addpublication 
     @publication = N'Pub_ProjectDB_Data', 
     @description = N'Transactional publication of ProjectDB tables', 
@@ -20,7 +18,6 @@ EXEC sp_addpublication
     @independent_agent = N'true';
 GO
 
--- 3. Добавление статей (таблиц) в публикацию
 EXEC sp_addarticle 
     @publication = N'Pub_ProjectDB_Data', 
     @article = N'Products', 
@@ -38,7 +35,6 @@ EXEC sp_addarticle
     @type = N'logbased';
 GO
 
--- 4. Создание снимка (Snapshot)
 EXEC sp_addpublication_snapshot 
     @publication = N'Pub_ProjectDB_Data', 
     @frequency_type = 1;
