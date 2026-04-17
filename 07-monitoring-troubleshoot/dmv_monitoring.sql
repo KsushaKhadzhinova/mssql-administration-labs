@@ -1,7 +1,6 @@
 USE [master];
 GO
 
--- 1. Мониторинг активных сессий и текущих запросов
 SELECT 
     r.session_id, r.status, r.start_time, r.total_elapsed_time,
     st.text AS QueryText,
@@ -10,8 +9,6 @@ FROM sys.dm_exec_requests r
 CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) st
 CROSS APPLY sys.dm_exec_query_plan(r.plan_handle) qp;
 
--- 2. Анализ статистики ожиданий (Wait Stats)
--- Помогает понять, во что упирается сервер (диск, сеть, процессор)
 SELECT TOP 10
     wait_type, 
     wait_time_ms / 1000.0 AS WaitSec,
@@ -20,9 +17,9 @@ FROM sys.dm_os_wait_stats
 WHERE wait_type NOT IN ('CLR_SEMAPHORE','LAZYWRITER_SLEEP','RESOURCE_QUEUE','SLEEP_TASK')
 ORDER BY wait_time_ms DESC;
 
--- 3. Проверка фрагментации индексов в ProjectDB
 USE [ProjectDB];
 GO
+
 SELECT 
     OBJECT_NAME(object_id) AS TableName,
     index_id,
