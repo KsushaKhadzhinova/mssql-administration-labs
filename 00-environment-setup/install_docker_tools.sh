@@ -1,3 +1,4 @@
+#!/bin/bash
 sudo apt-get update
 sudo apt-get install -y ca-certificates curl gnupg lsb-release docker.io docker-compose
 sudo systemctl enable docker
