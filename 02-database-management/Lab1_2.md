@@ -4,9 +4,9 @@ This lab demonstrates database creation, filegroup configuration, and schema man
 
 ---
 
-## [STEP 1] Database Creation on Default Instance (sql1)
+## STEP 1: Database Creation on Default Instance (sql1)
 
-Connect to the first instance and create a database **Test** with specific file parameters:
+Connect to the first instance and create database **Test** with specific file parameters:
 
 ```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
@@ -21,14 +21,13 @@ ON PRIMARY (
 "
 ```
 
-**Expected Result:**  
-Message `Commands completed successfully.`
+**Expected Result:** `Commands completed successfully.`
 
 ---
 
-## [STEP 2] Filegroup and Secondary File Setup
+## STEP 2: Filegroup and Secondary File Setup
 
-Add a new filegroup and a secondary NDF file to the **Test** database:
+Add new filegroup and secondary NDF file to `Test` database:
 
 ```bash
 sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -Q "
@@ -43,12 +42,11 @@ ALTER DATABASE Test ADD FILE (
 "
 ```
 
-**Expected Result:**  
-Confirmation of database modification.
+**Expected Result:** Confirmation of database modification.
 
 ---
 
-## [STEP 3] Verify File Configuration
+## STEP 3: Verify File Configuration
 
 Check physical file locations and growth parameters:
 
@@ -60,43 +58,38 @@ WHERE database_id = DB_ID('Test');
 "
 ```
 
-**Expected Result:**  
-Table listing:
-- `testdata_a.mdf`
-- `testdata_b.ndf`  
-with paths under `/var/opt/mssql/data/`.
+**Expected Result:** Table listing `testdata_a.mdf` and `testdata_b.ndf` under `/var/opt/mssql/data/`.
 
 ---
 
-## [STEP 4] Database Creation on Named Instance (sql2)
+## STEP 4: Database Creation on Named Instance (sql2)
 
-Connect to the second instance and create a database using your initials:
+Create database using initials:
 
 ```bash
 sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -Q "
-CREATE DATABASE Test_JD;
+CREATE DATABASE Test_KK;
 "
 ```
 
-**Expected Result:**  
-New database `Test_JD` is created.
+**Expected Result:** `Test_KK` database created.
 
 ---
 
-## [STEP 5] Schema and Table Operations (sql2)
+## STEP 5: Schema and Table Operations (sql2)
 
-Create schemas, tables, and a user with assigned ownership:
+Create schemas, tables, and user with ownership:
 
 ```bash
-sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -d Test_JD -Q "
+sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -d Test_KK -Q "
 CREATE SCHEMA CustomSchema;
 GO
 CREATE TABLE CustomSchema.TABLE_1 (ID INT PRIMARY KEY, Data NVARCHAR(50));
 GO
-ALTER DATABASE Test_JD ADD FILEGROUP TestFileGroup;
-ALTER DATABASE Test_JD ADD FILE (
-    NAME = Test_JD_Secondary, 
-    FILENAME = '/var/opt/mssql/data/test_jd_sec.ndf'
+ALTER DATABASE Test_KK ADD FILEGROUP TestFileGroup;
+ALTER DATABASE Test_KK ADD FILE (
+    NAME = Test_KK_Secondary, 
+    FILENAME = '/var/opt/mssql/data/test_kk_sec.ndf'
 ) TO FILEGROUP TestFileGroup;
 GO
 CREATE TABLE CustomSchema.TABLE_2 (ID INT) ON TestFileGroup;
@@ -109,28 +102,22 @@ CREATE TABLE OtherOwnerSchema.TABLE_3 (ID INT);
 "
 ```
 
-**Expected Result:**  
-Multiple batches executed successfully — creation of schemas, tables, and user confirmed.
+**Expected Result:** Schemas, tables, and user created successfully.
 
 ---
 
-## [STEP 6] Final Verification
+## STEP 6: Final Verification
 
-Verify the existence of schemas and their corresponding owners:
+Verify schemas and owners:
 
 ```bash
-sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -d Test_JD -Q "
+sqlcmd -S localhost,14332 -U sa -P 'YourStrongPassword123!' -C -d Test_KK -Q "
 SELECT s.name AS SchemaName, u.name AS OwnerName 
 FROM sys.schemas s 
-JOIN sys.sysusers u ON s.principal_id = u.uid;
+JOIN sys.database_principals u ON s.principal_id = u.principal_id;
 "
 ```
 
-**Expected Result:**  
-Result set includes:
+**Expected Result:**
 - `CustomSchema` — owner `dbo` or `sa`
 - `OtherOwnerSchema` — owner `OtherUser`
-
----
-
-**End of Lab 1.2**
