@@ -13,6 +13,7 @@ services:
     volumes:
       - ./volumes/sql1/data:/var/opt/mssql/data
       - ./shared/backup:/var/opt/mssql/backup
+
   sql2:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sql2
@@ -26,6 +27,7 @@ services:
     volumes:
       - ./volumes/sql2/data:/var/opt/mssql/data
       - ./shared/backup:/var/opt/mssql/backup
+
   sql3:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sql3
@@ -39,6 +41,14 @@ services:
     volumes:
       - ./volumes/sql3/data:/var/opt/mssql/data
       - ./shared/backup:/var/opt/mssql/backup
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 networks:
   default:
     name: mssql-network
