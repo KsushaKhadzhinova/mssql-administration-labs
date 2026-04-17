@@ -1,63 +1,57 @@
-# Automation Scripts & Orchestration
+# Automation & Orchestration Control Center
 
-This folder serves as the "control center" for the entire repository. It contains the consolidated `run_all_labs.sh` script for quick verification, demonstration, or restoration of the complete MSSQL lab environment.
-
----
-
-## [1] Main Script: run_all_labs.sh
-
-The `run_all_labs.sh` Bash script sequentially executes tasks from all laboratory works (1.1 through 2.3), eliminating the need to run dozens of SQL files manually.
-
-**What happens during execution:**
-- **Connectivity Check (Labs 1.1-1.2):** Verifies `sql1` and `sql2` containers, creates `Test` database with specified file parameters
-- **Disaster Recovery (Lab 1.3):** Creates backups, stops container, corrupts database file using `dd`, restores it
-- **Security (Lab 1.4):** Creates login/role hierarchy (`Manager`/`Employee`), configures schemas, applies `DENY` restrictions
-- **Automation (Lab 2.1):** Enables Database Mail, creates operators, sets up recurring backup job for `ProjectDB`
-- **High Availability (Lab 2.2):** Configures transactional replication (`sql1` → `sql2`), prepares `sql3` as standby node
-- **Optimization (Lab 2.3):** Generates 10,000 data rows, demonstrates Columnstore index acceleration
+This directory acts as the centralized management hub for the repository. It contains the primary orchestration scripts used to deploy, configure, and verify the entire MS SQL Server laboratory environment.
 
 ---
 
-## [2] Launch Instructions
+## Orchestrator: run_all_labs.sh
 
-**You must be in Ubuntu (WSL2) terminal.**
+The `run_all_labs.sh` script is a comprehensive Bash orchestrator that sequentially executes all administrative tasks from Labs 1.1 through 2.3. It is designed to demonstrate a full deployment cycle without manual T-SQL execution.
 
-### Step 1: Navigate to Directory
+### Automated Workflow Logic
+| Phase | Focus Area | Actions Performed |
+| :--- | :--- | :--- |
+| **01** | Connectivity | Verifies SQL instances and initializes the `Test` database. |
+| **02** | Recovery | Backs up data, executes physical corruption, and performs restoration. |
+| **03** | Security | Configures RBAC, Login/Role hierarchies, and `DENY` permissions. |
+| **04** | Automation | Sets up Database Mail, Operators, and SQL Agent Maintenance Jobs. |
+| **05** | Replication | Configures Transactional Replication from `sql1` to `sql2`. |
+| **06** | Performance | Injects high-volume data and implements Columnstore optimization. |
 
+
+
+---
+
+## Execution Instructions
+
+These scripts are designed for a **Linux/WSL2** environment. Follow these steps for a successful deployment:
+
+### 1. Grant Execution Permissions
+Before running the scripts for the first time, you must grant the necessary permissions:
 ```bash
-cd ~/mssql-administration-labs/scripts
+chmod +x scripts/*.sh
+chmod +x 03-backup-restore/*.sh
 ```
 
-### Step 2: Set Execution Permissions
-
+### 2. Execute the Laboratory Suite
+Run the main orchestrator from the root of the repository:
 ```bash
-chmod +x run_all_labs.sh
+./scripts/run_all_labs.sh
 ```
 
-### Step 3: Run
+**Technical Requirements & Notes**
 
-```bash
-./run_all_labs.sh
-```
-
----
-
-## [3] Technical Notes
-
-- **Credentials:** Script uses `YourStrongPassword123!`. Update `P` variable at script start if changed in `docker-compose.yml`
-- **sudo Usage:** Script prompts for sudo password midway (required for `dd` utility to simulate file corruption in Docker volumes)
-- **Dependencies:** Requires `mssql-tools18` (`sqlcmd` at `/opt/mssql-tools18/bin/sqlcmd`)
-- **Cleanup:** Script doesn't auto-remove objects. For clean re-run:
-  ```bash
-  docker-compose down -v && docker-compose up -d
-  ```
+| Requirement | Details |
+|-------------|---------|
+| **Elevated Privileges** | Script requires `sudo` for `dd` utility (modifies `.mdf` files in Docker volumes) |
+| **Security Credentials** | Default password: `YourStrongPassword123!`. Update `P` variable if changed in `docker-compose.yml` |
+| **Tooling** | `mssql-tools18` required (`sqlcmd` at `/opt/mssql-tools18/bin/sqlcmd`) |
+| **Environment Reset** | Clean re-run: `./scripts/cleanup.sh` |
 
 ---
 
-## [4] Output Structure
+## Output & Logging
 
-Script provides real-time execution log. Failed stages show `sqlcmd` error messages but continue to maximize task coverage.
+Script provides real-time log of every action. Failed SQL commands (e.g., duplicate objects) are caught, allowing continuation for maximum lab coverage.
 
----
-
-**Complete MSSQL Labs 1.1-2.3 verification in one command**
+**Automated MS SQL Server Administration Suite**
