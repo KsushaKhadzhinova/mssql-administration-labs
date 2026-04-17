@@ -1,50 +1,37 @@
-# Lab 1.1: Installation and Connectivity Verification
+# Lab 1.1: MS SQL Server Installation and Connectivity
 
-This laboratory work verifies the deployment of multiple SQL Server instances, tests network connectivity across custom ports, and validates server-level configurations (Authentication Mode and Backup Paths).
-
----
-
-## [1] How to Use This Folder
-
-### Connect to the Repository
-
-Navigate to your local repository directory:
-
-```bash
-cd ~/mssql-administration-labs/01-sql-installation
-```
-
-**Note:** If working on a new machine, first clone the repo:
-```bash
-git clone https://github.com/KsushaKhadzhinova/mssql-administration-labs.git
-```
-
-### Prerequisites
-
-The infrastructure from `00-environment-setup` must be active. Check containers:
-
-```bash
-docker ps
-```
-
-You should see `sql1` (port 14331) and `sql2` (port 14332) with status `Up`.
+Эта лабораторная работа — фундамент проекта. Цель: развертывание трех экземпляров SQL Server и подтверждение их готовности.
 
 ---
 
-## [2] Running Verification Scripts
+## Содержимое папки
 
-### Step 1: Check Docker Instance Status
+| Файл | Описание |
+|------|----------|
+| `check_version.sql` | Проверка версии, редакции (Edition) и обновлений |
+| `check_instances.sh` | Проверка статуса контейнеров через Docker API |
+| `verify_connectivity.sh` | Проверка сетевой доступности портов 14331-14333 |
 
-Filter and display only SQL Server containers and their port mappings:
+---
+
+## 🛠️ Пошаговое выполнение
+
+### Шаг 1: Проверка статуса контейнеров
 
 ```bash
 chmod +x check_instances.sh
 ./check_instances.sh
 ```
 
-### Step 2: Test SQL Connectivity
+### Шаг 2: Верификация редакции (Критически важно)
 
-Connect to both instances using `sqlcmd` to confirm default and named instance functionality:
+Developer/Enterprise Edition требуется для репликации и автоматизации:
+
+```bash
+sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i check_version.sql
+```
+
+### Шаг 3: Проверка удаленного подключения
 
 ```bash
 chmod +x verify_connectivity.sh
@@ -53,45 +40,32 @@ chmod +x verify_connectivity.sh
 
 ---
 
-## [3] Validating Server Configurations (T-SQL)
+## Ожидаемые результаты
 
-Execute T-SQL scripts to verify critical installation requirements.
-
-### Step 3: Verify Backup Directory and Default Settings
-
-Check the default backup path and test master database backup:
-
-```bash
-sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i setup_backup_dir.sql
-```
-
-### Step 4: Confirm Authentication Mode
-
-Verify Mixed Mode authentication as required by lab specifications:
-
-```bash
-sqlcmd -S localhost,14331 -U sa -P 'YourStrongPassword123!' -C -i check_auth_mode.sql
-```
+| Параметр | Ожидаемое значение |
+|----------|--------------------|
+| Контейнеры | Все 3 инстанса: `Up` или `Healthy` |
+| Edition | `Developer Edition` |
+| Connectivity | Каждый порт отвечает именем сервера |
 
 ---
 
-## [4] Expected Results Summary
+## Технические заметки
 
-| Task | Script/Command | Expected Output |
-|------|----------------|-----------------|
-| Instance Status | `check_instances.sh` | List showing `sql1` and `sql2` with status `Up` |
-| Connectivity | `verify_connectivity.sh` | ServerName and Version displayed for both instances |
-| Backup Path | `setup_backup_dir.sql` | Path shows `/var/opt/mssql/backup/` |
-| Security Mode | `check_auth_mode.sql` | Output confirms `Mixed Mode` |
+### Выбор портов
 
----
+Диапазон `14331-14333` вместо `1433`:
+- Избегает конфликтов с локальным SQL Server на Windows
+- Имитирует именованные экземпляры в корпоративной сети
 
-## [TECHNICAL NOTES]
+### Почему важна проверка Edition?
 
-- **Ports:** `sql1` uses host port `14331`, `sql2` uses host port `14332`
-- **Credentials:** Scripts use default `sa` account with setup password
-- **CLI Environment:** All commands execute from Ubuntu (WSL2) terminal using `mssql-tools18`
+**SQL Server Express** не поддерживает:
+- SQL Server Agent (Лаба 2.1)
+- Replication (Лаба 2.2)
 
----
+**Образ:** `mcr.microsoft.com/mssql/server:2022-latest` = Developer Edition по умолчанию
 
-**Lab 1.1 verification complete**
+### Безопасность
+
+Флаг `-C` (Trust Server Certificate) используется из-за самоподписанных сертификатов в Docker.
