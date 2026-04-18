@@ -22,6 +22,10 @@ GO
 SET SHOWPLAN_TEXT OFF;
 GO
 
+CREATE NONCLUSTERED INDEX IX_OrderDetails_Quantity 
+ON OrderDetails(Quantity);
+GO
+
 CREATE COLUMNSTORE INDEX IX_OrderDetails_ColumnStore 
 ON OrderDetails (ProductID, Quantity, PriceAtOrder);
 GO
