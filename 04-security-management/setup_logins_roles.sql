@@ -5,7 +5,7 @@ GO
 ALTER SERVER ROLE [sysadmin] ADD MEMBER [TestLogin1];
 GO
 
-USE [ProjectDB];
+USE [Test];
 GO
 CREATE USER [TestUser1] FOR LOGIN [TestLogin1];
 CREATE USER [TestUser2] FOR LOGIN [TestLogin2];
