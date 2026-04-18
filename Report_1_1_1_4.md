@@ -74,6 +74,8 @@ Implement a Role-Based Access Control (RBAC) model to enforce the principle of l
 **Validation:** Verified access restrictions using the `EXECUTE AS USER` command to simulate different security contexts.
 
 **[Screenshot #4]** *(Successful SELECT from `dbo` versus an `Access Denied` error when querying `SecureSchema`)*
+<img width="1280" height="474" alt="photo_11_2026-04-18_12-16-59" src="https://github.com/user-attachments/assets/e883f2d5-f7c5-404e-bbf4-60e9d4142a7d" />
+
 
 ---
 
