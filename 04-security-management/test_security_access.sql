@@ -5,7 +5,7 @@ EXECUTE AS USER = 'TestUser2';
 GO
 PRINT 'Testing access for TestUser2...';
 
-SELECT TOP 1 * FROM dbo.Products;
+SELECT TOP 1 * FROM CustomSchema.Table_1;
 
 BEGIN TRY
     SELECT * FROM SecureSchema.SalaryData;
