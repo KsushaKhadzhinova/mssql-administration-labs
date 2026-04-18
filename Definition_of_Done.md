@@ -1,6 +1,7 @@
 # Final Project Report
 
 **Student:** Kseniya Khadzhinova  
+**Group:** 320604  
 **Project:** MS SQL Server Administration & Distributed Infrastructure  
 
 ---
