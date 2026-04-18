@@ -156,6 +156,7 @@ WHILE @i <= 60000 BEGIN
     INSERT INTO OrderDetails (OrderID, ProductID, Quantity, PriceAtOrder) VALUES (1, 1, @i % 10 + 1, 100.00);
     SET @i = @i + 1;
 END;
+CREATE NONCLUSTERED INDEX IX_OrderDetails_Quantity ON OrderDetails(Quantity);
 CREATE COLUMNSTORE INDEX IX_OrderDetails_CS ON OrderDetails (ProductID, Quantity, PriceAtOrder);
 GO
 CREATE EVENT SESSION [TrackLongQueries] ON SERVER 
