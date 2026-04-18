@@ -9,6 +9,6 @@ ALTER DATABASE [Test] ADD FILEGROUP [TestFileGroup];
 GO
 
 ALTER DATABASE [Test] ADD FILE 
-( NAME = N'testdata_b', FILENAME = N'/var/opt/mssql/data/testdata_b.ndf' , SIZE = 5120KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB ) 
+( NAME = N'testdata_b', FILENAME = N'/var/opt/mssql/data/testdata_b.ndf' , SIZE = 5120KB , MAXSIZE = UNLIMITED, FILEGROWTH = 2048KB ) 
 TO FILEGROUP [TestFileGroup];
 GO
