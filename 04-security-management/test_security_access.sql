@@ -1,4 +1,4 @@
-USE [ProjectDB];
+USE [Test];
 GO
 
 EXECUTE AS USER = 'TestUser2';
