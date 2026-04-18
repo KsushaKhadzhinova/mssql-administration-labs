@@ -152,7 +152,7 @@ run_sql1 "
 USE [$DB_PROD];
 SET NOCOUNT ON;
 DECLARE @i INT = 1;
-WHILE @i <= 50000 BEGIN
+WHILE @i <= 60000 BEGIN
     INSERT INTO OrderDetails (OrderID, ProductID, Quantity, PriceAtOrder) VALUES (1, 1, @i % 10 + 1, 100.00);
     SET @i = @i + 1;
 END;
