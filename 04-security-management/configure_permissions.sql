@@ -1,4 +1,4 @@
-USE [ProjectDB];
+USE [Test];
 GO
 
 DENY ALTER ON USER::guest TO [Employee];
